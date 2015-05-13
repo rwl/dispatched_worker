@@ -1,0 +1,5 @@
+name: dispatched_worker
+version: 0.0.2
+author: Richard Lincoln <r.w.lincoln@gmail.com>
+description: A wrapper around the WebWorker API
+homepage: https://github.com/rwl/dispatched_worker
