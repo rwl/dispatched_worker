@@ -15,25 +15,32 @@ class DispatchedWorker {
 
   DispatchedWorker(String scriptUrl) : _worker = new Worker(scriptUrl);
 
-  Future send(payload) {
+  Future send(List payload) {
     var completer = new Completer();
 
     var handle = _random.nextInt(65535);
 
     workerMessageCallback(MessageEvent event) {
       var packet = event.data;
-      if (packet is Map && packet['workerHandle'] == handle) {
+      if (packet is List && packet.first == handle) {
         _worker.removeEventListener("message", workerMessageCallback, false);
-        if (packet.containsKey('error')) {
-          completer.completeError(packet['error']);
+        if (packet.length > 1) {
+          var result = packet[1];
+          if (result is List) {
+            completer.completeError(result.join(': '));
+          } else {
+            completer.complete(result);
+          }
         } else {
-          completer.complete(packet['payload']);
+          completer.completeError("internal error: no result");
         }
+      } else if (packet is String && packet.startsWith("internal error:")) {
+        completer.completeError(packet);
       }
     }
 
     _worker.addEventListener('message', workerMessageCallback, false);
-    _worker.postMessage({ 'workerHandle': handle, 'payload': payload });
+    _worker.postMessage([handle, payload]);
 
     return completer.future;
   }
