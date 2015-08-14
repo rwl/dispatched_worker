@@ -8,6 +8,15 @@ import 'dart:math' show Random;
 /// the javascript worker code. Request work using [send] and wait for
 /// the result using the returned [Future].
 ///
+/// Within the worker script:
+///
+///     incoming_message = [ handle, [ payload ] ]
+///     outgoing_message = [ handle, output ]
+///     outgoing_message = [ handle, [ "error", error ] ]
+///
+/// `handle` is a random [num] (assigned by the host) to match
+/// request and response.
+///
 /// Based on: https://gist.github.com/normanrz/4136597
 class DispatchedWorker {
   final Worker _worker;
@@ -26,8 +35,8 @@ class DispatchedWorker {
         _worker.removeEventListener("message", workerMessageCallback, false);
         if (packet.length > 1) {
           var result = packet[1];
-          if (result is List) {
-            completer.completeError(result.join(': '));
+          if (result is List && "error" == result.first) {
+            completer.completeError(result.length > 1 ? result[1] : null);
           } else {
             completer.complete(result);
           }
